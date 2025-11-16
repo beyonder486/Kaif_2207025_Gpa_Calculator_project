@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.shape.Line?>
+
+<BorderPane xmlns="http://javafx.com/javafx/20.0.1" 
+            xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="com.kaif.gpacalculator.controller.GpaResultController"
+            styleClass="result-pane">
+    
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+            <VBox alignment="TOP_CENTER" spacing="25">
+                <padding>
+                    <Insets top="30" right="40" bottom="30" left="40"/>
+                </padding>
+                
+                <!-- Award Certificate Header -->
+                <VBox alignment="CENTER" spacing="15" styleClass="certificate-header">
+                    <padding>
+                        <Insets top="30" right="40" bottom="30" left="40"/>
+                    </padding>
+                    
+                    <Label text="🎓" styleClass="certificate-icon">
+                        <font>
+                            <Font name="System" size="60"/>
+                        </font>
+                    </Label>
+                    
+                    <Label text="ACADEMIC PERFORMANCE REPORT" styleClass="certificate-title">
+                        <font>
+                            <Font name="System Bold" size="32"/>
+                        </font>
+                    </Label>
+                    
+                    <Label text="Student Grading System" styleClass="certificate-subtitle">
+                        <font>
+                            <Font name="System Italic" size="18"/>
+                        </font>
+                    </Label>
+                    
+                    <Separator prefWidth="400"/>
+                </VBox>
+                
+                <!-- GPA Display Section -->
+                <VBox alignment="CENTER" spacing="15" styleClass="gpa-display-section">
+                    <padding>
+                        <Insets top="25" right="40" bottom="25" left="40"/>
+                    </padding>
+                    
+                    <Label text="CUMULATIVE GPA" styleClass="gpa-label-text">
+                        <font>
+                            <Font name="System" size="16"/>
+                        </font>
+                    </Label>
+                    
+                    <Label fx:id="gpaValueLabel" text="0.00" styleClass="gpa-value">
+                        <font>
+                            <Font name="System Bold" size="72"/>
+                        </font>
+                    </Label>
+                    
+                    <Label fx:id="gpaGradeLabel" text="Grade: N/A" styleClass="gpa-grade-label">
+                        <font>
+                            <Font name="System" size="20"/>
+                        </font>
+                    </Label>
+                </VBox>
+                
+                <!-- Summary Statistics -->
+                <HBox spacing="40" alignment="CENTER" styleClass="summary-section">
+                    <padding>
+                        <Insets top="20" right="30" bottom="20" left="30"/>
+                    </padding>
+                    
+                    <VBox alignment="CENTER" spacing="8" styleClass="stat-box">
+                        <Label text="Total Courses" styleClass="stat-label">
+                            <font>
+                                <Font name="System" size="14"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="totalCoursesLabel" text="0" styleClass="stat-value">
+                            <font>
+                                <Font name="System Bold" size="28"/>
+                            </font>
+                        </Label>
+                    </VBox>
+                    
+                    <Separator orientation="VERTICAL"/>
+                    
+                    <VBox alignment="CENTER" spacing="8" styleClass="stat-box">
+                        <Label text="Total Credits" styleClass="stat-label">
+                            <font>
+                                <Font name="System" size="14"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="totalCreditsLabel" text="0.0" styleClass="stat-value">
+                            <font>
+                                <Font name="System Bold" size="28"/>
+                            </font>
+                        </Label>
+                    </VBox>
+                    
+                    <Separator orientation="VERTICAL"/>
+                    
+                    <VBox alignment="CENTER" spacing="8" styleClass="stat-box">
+                        <Label text="Quality Points" styleClass="stat-label">
+                            <font>
+                                <Font name="System" size="14"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="qualityPointsLabel" text="0.00" styleClass="stat-value">
+                            <font>
+                                <Font name="System Bold" size="28"/>
+                            </font>
+                        </Label>
+                    </VBox>
+                </HBox>
+                
+                <!-- Course Details Table -->
+                <VBox spacing="15" styleClass="course-details-section">
+                    <padding>
+                        <Insets top="20" right="30" bottom="20" left="30"/>
+                    </padding>
+                    
+                    <Label text="COURSE DETAILS" styleClass="section-header">
+                        <font>
+                            <Font name="System Bold" size="20"/>
+                        </font>
+                    </Label>
+                    
+                    <Separator/>
+                    
+                    <!-- Detailed Course Table -->
+                    <TableView fx:id="resultTable" styleClass="result-table" prefHeight="300">
+                        <columns>
+                            <TableColumn fx:id="resultNameColumn" text="Course Name" prefWidth="200"/>
+                            <TableColumn fx:id="resultCodeColumn" text="Code" prefWidth="100"/>
+                            <TableColumn fx:id="resultCreditColumn" text="Credit" prefWidth="80"/>
+                            <TableColumn fx:id="resultTeacher1Column" text="Teacher 1" prefWidth="130"/>
+                            <TableColumn fx:id="resultTeacher2Column" text="Teacher 2" prefWidth="130"/>
+                            <TableColumn fx:id="resultGradeColumn" text="Grade" prefWidth="80"/>
+                            <TableColumn fx:id="resultPointsColumn" text="Points" prefWidth="80"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                
+                <!-- Performance Message -->
+                <VBox alignment="CENTER" spacing="10" styleClass="performance-message">
+                    <padding>
+                        <Insets top="20" right="30" bottom="20" left="30"/>
+                    </padding>
+                    
+                    <Label fx:id="performanceMessageLabel" text="" 
+                           styleClass="performance-text" 
+                           wrapText="true" 
+                           maxWidth="600" 
+                           textAlignment="CENTER">
+                        <font>
+                            <Font name="System Italic" size="16"/>
+                        </font>
+                    </Label>
+                </VBox>
+                
+                <!-- Certificate Footer -->
+                <VBox alignment="CENTER" spacing="10" styleClass="certificate-footer">
+                    <padding>
+                        <Insets top="30" right="30" bottom="20" left="30"/>
+                    </padding>
+                    
+                    <Separator prefWidth="400"/>
+                    
+                    <Label fx:id="dateLabel" text="Date: November 14, 2025" styleClass="footer-text">
+                        <font>
+                            <Font name="System" size="12"/>
+                        </font>
+                    </Label>
+                    
+                    <Label text="Generated by GPA Calculator System" styleClass="footer-text">
+                        <font>
+                            <Font name="System Italic" size="11"/>
+                        </font>
+                    </Label>
+                    
+                    <Label text="Developed by: Kaif - 2207025" styleClass="footer-text">
+                        <font>
+                            <Font name="System Italic" size="11"/>
+                        </font>
+                    </Label>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+    
+    <!-- Bottom Buttons -->
+    <bottom>
+        <HBox spacing="15" alignment="CENTER" styleClass="bottom-section">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            
+            <Button text="← Back to Entry" onAction="#handleBackToEntry" styleClass="secondary-button">
+                <font>
+                    <Font name="System" size="14"/>
+                </font>
+                <padding>
+                    <Insets top="10" right="25" bottom="10" left="25"/>
+                </padding>
+            </Button>
+            
+            <Button text="Print/Save" onAction="#handlePrint" styleClass="primary-button">
+                <font>
+                    <Font name="System" size="14"/>
+                </font>
+                <padding>
+                    <Insets top="10" right="25" bottom="10" left="25"/>
+                </padding>
+            </Button>
+            
+            <Button text="New Calculation" onAction="#handleNewCalculation" styleClass="primary-button">
+                <font>
+                    <Font name="System Bold" size="14"/>
+                </font>
+                <padding>
+                    <Insets top="10" right="25" bottom="10" left="25"/>
+                </padding>
+            </Button>
+        </HBox>
+    </bottom>
+</BorderPane>
