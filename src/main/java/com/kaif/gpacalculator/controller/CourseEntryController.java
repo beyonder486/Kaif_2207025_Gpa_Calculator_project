@@ -353,4 +353,22 @@ public class CourseEntryController implements Initializable {
         gradeComboBox.setDisable(false);
         addCourseButton.setDisable(false);
     }
+    
+    /**
+     * Restore previously entered course data when navigating back
+     */
+    public void restoreData(java.util.List<Course> courses) {
+        courseList.clear();
+        courseList.addAll(courses);
+        coursesTable.setItems(courseList);
+        
+        // Recalculate current credits
+        currentCredits = courseList.stream()
+                .mapToDouble(Course::getCourseCredit)
+                .sum();
+        currentCreditsLabel.setText(String.format("%.1f", currentCredits));
+        
+        // Update calculate button state
+        updateCalculateButton();
+    }
 }

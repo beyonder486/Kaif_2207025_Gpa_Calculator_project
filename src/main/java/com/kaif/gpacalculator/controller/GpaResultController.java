@@ -1,12 +1,18 @@
 package com.kaif.gpacalculator.controller;
 
 import com.kaif.gpacalculator.model.Course;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -17,161 +23,134 @@ import java.util.List;
  */
 public class GpaResultController {
 
-    @FXML
-    private Label gpaValueLabel;
+    @FXML private Label gpaValueLabel;
+    @FXML private Label gpaGradeLabel;
+    @FXML private Label totalCoursesLabel;
+    @FXML private Label totalCreditsLabel;
+    @FXML private Label qualityPointsLabel;
+    @FXML private Label performanceMessageLabel;
     
-    @FXML
-    private Label gpaGradeLabel;
-    
-    @FXML
-    private Label totalCreditsLabel;
-    
-    @FXML
-    private Label totalCoursesLabel;
-    
-    @FXML
-    private Button newCalculationButton;
-    
-    @FXML
-    private Button backToHomeButton;
-    
+    @FXML private TableView<Course> resultTable;
+    @FXML private TableColumn<Course, String> resultNameColumn;
+    @FXML private TableColumn<Course, String> resultCodeColumn;
+    @FXML private TableColumn<Course, Double> resultCreditColumn;
+    @FXML private TableColumn<Course, String> resultTeacher1Column;
+    @FXML private TableColumn<Course, String> resultTeacher2Column;
+    @FXML private TableColumn<Course, String> resultGradeColumn;
+    @FXML private TableColumn<Course, Double> resultPointsColumn;
+
     private double gpa;
-    private double totalCredits;
-    private int totalCourses;
-    
+    private List<Course> courses;
+
+    @FXML
+    private void initialize() {
+        // Set up table columns
+        resultNameColumn.setCellValueFactory(new PropertyValueFactory<>("courseName"));
+        resultCodeColumn.setCellValueFactory(new PropertyValueFactory<>("courseCode"));
+        resultCreditColumn.setCellValueFactory(new PropertyValueFactory<>("courseCredit"));
+        resultTeacher1Column.setCellValueFactory(new PropertyValueFactory<>("teacher1Name"));
+        resultTeacher2Column.setCellValueFactory(new PropertyValueFactory<>("teacher2Name"));
+        resultGradeColumn.setCellValueFactory(new PropertyValueFactory<>("grade"));
+        resultPointsColumn.setCellValueFactory(new PropertyValueFactory<>("gradePoints"));
+    }
+
     /**
-     * Initialize the result screen with GPA data
+     * Initialize data for the result screen
      */
     public void initData(double gpa, double totalCredits, List<Course> courses) {
         this.gpa = gpa;
-        this.totalCredits = totalCredits;
-        this.totalCourses = courses != null ? courses.size() : 0;
+        this.courses = courses;
         
-        displayResults();
-    }
-    
-    /**
-     * Display the GPA calculation results
-     */
-    private void displayResults() {
+        // Display GPA
         gpaValueLabel.setText(String.format("%.2f", gpa));
-        totalCreditsLabel.setText(String.format("%.1f", totalCredits));
-        totalCoursesLabel.setText(String.format("%d", totalCourses));
         
-        // Set color and grade based on GPA value
+        // Determine grade and color
         String grade;
-        String color;
+        String colorClass;
+        String message;
+        
         if (gpa >= 3.5) {
             grade = "Excellent (A)";
-            color = "-fx-text-fill: #27ae60;"; // Green
+            colorClass = "gpa-excellent";
+            message = "Outstanding performance! Keep up the excellent work!";
         } else if (gpa >= 3.0) {
             grade = "Good (B)";
-            color = "-fx-text-fill: #2980b9;"; // Blue
+            colorClass = "gpa-good";
+            message = "Great job! You're doing well in your studies.";
         } else if (gpa >= 2.0) {
             grade = "Average (C)";
-            color = "-fx-text-fill: #f39c12;"; // Orange
+            colorClass = "gpa-average";
+            message = "You're passing. Consider improving your study habits.";
         } else {
-            grade = "Below Average (D/F)";
-            color = "-fx-text-fill: #e74c3c;"; // Red
+            grade = "Below Average";
+            colorClass = "gpa-below-average";
+            message = "You need to work harder. Seek help if needed.";
         }
         
-        gpaValueLabel.setStyle(color);
         gpaGradeLabel.setText("Grade: " + grade);
+        performanceMessageLabel.setText(message);
+        
+        // Apply color styling
+        gpaValueLabel.getStyleClass().add(colorClass);
+        
+        // Calculate statistics
+        int totalCourses = courses.size();
+        double qualityPoints = courses.stream().mapToDouble(Course::getWeightedGradePoints).sum();
+        
+        totalCoursesLabel.setText(String.valueOf(totalCourses));
+        totalCreditsLabel.setText(String.format("%.1f", totalCredits));
+        qualityPointsLabel.setText(String.format("%.2f", qualityPoints));
+        
+        // Populate table with courses
+        ObservableList<Course> courseData = FXCollections.observableArrayList(courses);
+        resultTable.setItems(courseData);
     }
-    
-    /**
-     * Handle new calculation button - return to course entry
-     */
+
     @FXML
-    private void handleNewCalculation() {
+    private void handleBackToEntry(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/kaif/gpacalculator/view/course-entry.fxml"));
             Parent root = loader.load();
             
-            Stage stage = (Stage) newCalculationButton.getScene().getWindow();
-            double width = stage.getWidth();
-            double height = stage.getHeight();
-            Scene scene = new Scene(root, width, height);
-            
-            try {
-                scene.getStylesheets().add(getClass().getResource("/com/kaif/gpacalculator/css/styles.css").toExternalForm());
-            } catch (NullPointerException e) {
-                System.out.println("Warning: CSS file not found.");
+            // Get the controller and restore data if needed
+            CourseEntryController controller = loader.getController();
+            if (courses != null && !courses.isEmpty()) {
+                controller.restoreData(courses);
             }
             
-            stage.setScene(scene);
-            stage.setTitle("GPA Calculator - Course Entry");
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Error loading course entry screen: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Handle back to entry button - return to course entry screen
-     */
-    @FXML
-    private void handleBackToEntry() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/kaif/gpacalculator/view/course-entry.fxml"));
-            Parent root = loader.load();
-            
-            Stage stage = (Stage) gpaValueLabel.getScene().getWindow();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             double width = stage.getWidth();
             double height = stage.getHeight();
+            
             Scene scene = new Scene(root, width, height);
-            
-            try {
-                scene.getStylesheets().add(getClass().getResource("/com/kaif/gpacalculator/css/styles.css").toExternalForm());
-            } catch (NullPointerException e) {
-                System.out.println("Warning: CSS file not found.");
-            }
-            
+            scene.getStylesheets().add(getClass().getResource("/com/kaif/gpacalculator/css/styles.css").toExternalForm());
             stage.setScene(scene);
-            stage.setTitle("GPA Calculator - Course Entry");
-            
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("Error loading course entry screen: " + e.getMessage());
         }
     }
-    
-    /**
-     * Handle print button - placeholder for print functionality
-     */
+
     @FXML
-    private void handlePrint() {
-        System.out.println("Print/Save functionality - To be implemented");
-        // Future enhancement: Add print or save to PDF functionality
-    }
-    
-    /**
-     * Handle back to home button
-     */
-    @FXML
-    private void handleBackToHome() {
+    private void handleNewCalculation(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/kaif/gpacalculator/view/home.fxml"));
             Parent root = loader.load();
             
-            Stage stage = (Stage) backToHomeButton.getScene().getWindow();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             double width = stage.getWidth();
             double height = stage.getHeight();
+            
             Scene scene = new Scene(root, width, height);
-            
-            try {
-                scene.getStylesheets().add(getClass().getResource("/com/kaif/gpacalculator/css/styles.css").toExternalForm());
-            } catch (NullPointerException e) {
-                System.out.println("Warning: CSS file not found.");
-            }
-            
+            scene.getStylesheets().add(getClass().getResource("/com/kaif/gpacalculator/css/styles.css").toExternalForm());
             stage.setScene(scene);
-            stage.setTitle("GPA Calculator - Home");
-            
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("Error loading home screen: " + e.getMessage());
         }
+    }
+
+    @FXML
+    private void handlePrint(ActionEvent event) {
+        // TODO: Implement print/save functionality
+        System.out.println("Print/Save functionality - To be implemented");
     }
 }
