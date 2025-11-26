@@ -1,5 +1,6 @@
 package com.kaif.gpacalculator;
 
+import database.db;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -8,14 +9,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
-/**
- * Main Application class for GPA Calculator
- * Entry point for the JavaFX application
- */
 public class GpaCalculatorApp extends Application {
 
     private Scene scene;
     private String cssPath = "/com/kaif/gpacalculator/css/styles.css";
+    private db d=new db();
 
     @Override
     public void start(Stage primaryStage) {
@@ -51,6 +49,7 @@ public class GpaCalculatorApp extends Application {
             e.printStackTrace();
             System.err.println("Error starting application: " + e.getMessage());
         }
+        d.getConnection();
     }
 
     private void loadCSS() {
