@@ -13,7 +13,7 @@ public class GpaCalculatorApp extends Application {
 
     private Scene scene;
     private String cssPath = "/com/kaif/gpacalculator/css/styles.css";
-    private db d=new db();
+    private db database;
 
     @Override
     public void start(Stage primaryStage) {
@@ -45,11 +45,14 @@ public class GpaCalculatorApp extends Application {
             primaryStage.setMinHeight(600);
             primaryStage.show();
             
+            // Initialize database
+            database = db.getInstance();
+            System.out.println("Database initialized successfully");
+            
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("Error starting application: " + e.getMessage());
         }
-        d.getConnection();
     }
 
     private void loadCSS() {

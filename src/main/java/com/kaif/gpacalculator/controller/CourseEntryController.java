@@ -2,6 +2,7 @@ package com.kaif.gpacalculator.controller;
 
 import com.kaif.gpacalculator.model.Course;
 import com.kaif.gpacalculator.util.GpaCalculator;
+import database.db;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -20,7 +21,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 /**
- * Controller for the Course Entry Screen
+ * Controller for the Course Entry Screen with Database Integration
  */
 public class CourseEntryController implements Initializable {
 
@@ -47,9 +48,15 @@ public class CourseEntryController implements Initializable {
     private ObservableList<Course> courseList = FXCollections.observableArrayList();
     private double targetCredits = 0.0;
     private double currentCredits = 0.0;
+    
+    // Database instance
+    private db database;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        // Initialize database
+        database = db.getInstance();
+        
         // Initialize grade combo box
         gradeComboBox.setItems(FXCollections.observableArrayList(
             "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "D", "F"
@@ -74,6 +81,18 @@ public class CourseEntryController implements Initializable {
         
         // Disable course entry controls until target is set
         disableCourseEntryControls();
+        
+        // Load existing courses from database (optional - can be commented out for fresh start each time)
+        // loadCoursesFromDatabase();
+    }
+    
+    /**
+     * Load courses from database into the table
+     */
+    private void loadCoursesFromDatabase() {
+        courseList.clear();
+        courseList.addAll(database.getAllCourses());
+        updateCurrentCredits();
     }
 
     @FXML
@@ -126,24 +145,41 @@ public class CourseEntryController implements Initializable {
 
             // Create and add course
             Course course = new Course(courseName, courseCode, courseCredit, teacher1, teacher2, grade);
-            courseList.add(course);
-
-            // Update current credits
-            currentCredits += courseCredit;
-            currentCreditsLabel.setText(String.format("Current: %.1f", currentCredits));
-
-            // Update calculate button state
-            updateCalculateButton();
-
-            // Clear fields
-            handleClearFields();
-
-            // Show success message
-            showAlert(Alert.AlertType.INFORMATION, "Success", "Course added successfully!");
+            
+            // Save to database
+            if (database.insertCourse(course)) {
+                // Add to local list (UI)
+                courseList.add(course);
+                
+                // Update current credits
+                currentCredits += courseCredit;
+                currentCreditsLabel.setText(String.format("Current: %.1f", currentCredits));
+                
+                // Update calculate button state
+                updateCalculateButton();
+                
+                // Clear fields
+                handleClearFields();
+                
+                // Show success message
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Course added and saved to database!");
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to save course to database.");
+            }
 
         } catch (NumberFormatException e) {
             showAlert(Alert.AlertType.ERROR, "Invalid Input", "Please enter a valid number for course credit.");
         }
+    }
+    
+    /**
+     * Update current credits from course list
+     */
+    private void updateCurrentCredits() {
+        currentCredits = courseList.stream()
+            .mapToDouble(Course::getCourseCredit)
+            .sum();
+        currentCreditsLabel.setText(String.format("Current: %.1f", currentCredits));
     }
 
     @FXML
@@ -208,6 +244,10 @@ public class CourseEntryController implements Initializable {
             // Calculate GPA
             double gpa = GpaCalculator.calculateGPA(courseList.stream().toList());
             double totalCredits = GpaCalculator.calculateTotalCredits(courseList.stream().toList());
+            
+            // Save calculation to database
+            database.insertCalculation(gpa, totalCredits, courseList.stream().toList());
+            System.out.println("GPA calculation saved to database!");
             
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/kaif/gpacalculator/view/gpa-result.fxml"));
             Parent root = loader.load();
@@ -370,5 +410,105 @@ public class CourseEntryController implements Initializable {
         
         // Update calculate button state
         updateCalculateButton();
+    }
+    
+    /**
+     * Clear all courses from the current session and database
+     */
+    @FXML
+    private void handleClearAllCourses() {
+        if (courseList.isEmpty()) {
+            showAlert(Alert.AlertType.INFORMATION, "No Courses", "There are no courses to clear.");
+            return;
+        }
+        
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Clear All Courses");
+        alert.setHeaderText("Delete all courses?");
+        alert.setContentText("This will remove all courses from the current session and database. This action cannot be undone.");
+        
+        if (alert.showAndWait().get() == ButtonType.OK) {
+            database.deleteAllCourses();
+            courseList.clear();
+            currentCredits = 0.0;
+            currentCreditsLabel.setText("Current: 0.0");
+            updateCalculateButton();
+            showAlert(Alert.AlertType.INFORMATION, "Success", "All courses have been cleared.");
+        }
+    }
+    
+    /**
+     * Export current courses to JSON
+     */
+    @FXML
+    private void handleExportToJSON() {
+        if (courseList.isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "No Courses", "There are no courses to export.");
+            return;
+        }
+        
+        try {
+            String json = database.exportCoursesToJSON();
+            // You can add file chooser here to save to a file
+            System.out.println("Courses exported to JSON:");
+            System.out.println(json);
+            showAlert(Alert.AlertType.INFORMATION, "Export Successful", 
+                     "Courses exported to JSON. Check console for output.\n" +
+                     "In a full implementation, this would save to a file.");
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR, "Export Failed", "Failed to export courses: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * View calculation history
+     */
+    @FXML
+    private void handleViewHistory() {
+        var history = database.getCalculationHistory(10);
+        
+        if (history.isEmpty()) {
+            showAlert(Alert.AlertType.INFORMATION, "No History", "No calculation history found.");
+            return;
+        }
+        
+        StringBuilder message = new StringBuilder("Recent GPA Calculations:\n\n");
+        for (var record : history) {
+            message.append(record.toString()).append("\n");
+        }
+        
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Calculation History");
+        alert.setHeaderText("Your Recent GPA Calculations");
+        alert.setContentText(message.toString());
+        alert.getDialogPane().setPrefWidth(600);
+        alert.showAndWait();
+    }
+    
+    /**
+     * Load courses from database
+     */
+    @FXML
+    private void handleLoadFromDatabase() {
+        var savedCourses = database.getAllCourses();
+        
+        if (savedCourses.isEmpty()) {
+            showAlert(Alert.AlertType.INFORMATION, "No Data", "No saved courses found in database.");
+            return;
+        }
+        
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Load Saved Courses");
+        confirmAlert.setHeaderText("Load " + savedCourses.size() + " courses from database?");
+        confirmAlert.setContentText("This will replace your current course list. Current courses will be lost if not saved.");
+        
+        if (confirmAlert.showAndWait().get() == ButtonType.OK) {
+            courseList.clear();
+            courseList.addAll(savedCourses);
+            updateCurrentCredits();
+            updateCalculateButton();
+            showAlert(Alert.AlertType.INFORMATION, "Success", 
+                     savedCourses.size() + " courses loaded from database!");
+        }
     }
 }
